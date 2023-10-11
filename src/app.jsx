@@ -37,7 +37,14 @@ export default function Home() {
         }
 
         if (indent === 1 && key === "track") {
-          if (Object.keys(track).length > 0) {
+          if (
+            Object.keys(track).length > 0 &&
+            tracks.find(
+              (alreadyPlayed) =>
+                track.performer == alreadyPlayed.performer &&
+                track.title == alreadyPlayed.title
+            ) == null
+          ) {
             tracks.push(track);
           }
           track = {};
@@ -45,7 +52,14 @@ export default function Home() {
           track[key] = value;
         }
       }
-      if (Object.keys(track).length > 0) {
+      if (
+        Object.keys(track).length > 0 &&
+        tracks.find(
+          (alreadyPlayed) =>
+            track.performer == alreadyPlayed.performer &&
+            track.title == alreadyPlayed.title
+        ) == null
+      ) {
         tracks.push(track);
       }
       return tracks;
@@ -80,7 +94,11 @@ export default function Home() {
         {cue && (
           <textarea
             value={trackListing
-              .map((track) => track.performer != null ? `${track.performer} — ${track.title}` : `${track.title}`)
+              .map((track) =>
+                track.performer != null
+                  ? `${track.performer} — ${track.title}`
+                  : `${track.title}`
+              )
               .join("\n")}
           />
         )}

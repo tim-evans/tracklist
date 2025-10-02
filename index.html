@@ -1,16 +1,128 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    
-    <!-- This is the main template for the site, with index.jsx building the content and behavior -->
-    
-    <title>Hello React!</title>
+    <title>Tracklist</title>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" href="https://glitch.com/favicon.ico" />
+    <link href="https://fonts.googleapis.com/css2?family=Victor+Mono:ital,wght@0,100..700;1,100..700&display=swap"
+      rel="stylesheet">
+      <style>
+        :root {
+          --color-bg: #FFFFA0;
+          --color-text-main: #000000;
+          --color-primary: #AFECE0;
+        }
+        html, body {
+          font-family: "Victor Mono", monospace;
+          font-weight: 600;
+          margin: 0;
+          padding: 0;
+        }
+        main {
+          min-height: var(--wrapper-height);
+          display: grid;
+          place-items: center;
+          margin: 0;
+          height: 100vh;
+          width: 100vw;
+        }
+        main.active {
+          background-color: var(--color-bg);
+        }
+        textarea {
+          font-family: "Victor Mono", monospace;
+          font-weight: 600;
+          padding: 1rem;
+          border-radius: 12px;
+          width: 500px;
+        }
+      </style>
   </head>
   <body>
-    <div id="root"></div>
-    <script type="module" src="/src/index.jsx"></script>
+    <main role="main">
+      <p>Drop a .cue file to generate a track list.</p>
+    </main>
+    <script>
+      document.addEventListener("readystatechange", (evt) => {
+        let main = document.querySelector("main");
+
+        document.addEventListener("dragenter", (evt) => {
+          main.classList.add("active");
+        });
+        document.addEventListener("dragover", (evt) => {
+          evt.preventDefault();
+        });
+        document.addEventListener("drop", async (evt) => {
+          evt.preventDefault();
+
+          let file = evt.dataTransfer.items[0].getAsFile();
+          let cue = await file.text();
+          let tracks = [];
+          let lines = cue.split("\n");
+          let track = {};
+          for (let line of lines) {
+            let indent = 0;
+            for (let i = 0, len = line.length; i < len; i++) {
+              if (line[i] === "\t") {
+                indent++;
+              } else {
+                break;
+              }
+            }
+
+            line = line.trim();
+            let [key, value] = [
+              line.slice(0, line.indexOf(" ")),
+              line.slice(line.indexOf(" ") + 1),
+            ];
+            key = key.toLowerCase();
+            if (value.startsWith('"')) {
+              value = value.slice(1, -1);
+            }
+
+            if (indent === 1 && key === "track") {
+              if (
+                Object.keys(track).length > 0 &&
+                tracks.find(
+                  (alreadyPlayed) =>
+                    track.performer == alreadyPlayed.performer &&
+                    track.title == alreadyPlayed.title
+                ) == null
+              ) {
+                tracks.push(track);
+              }
+              track = {};
+            } else if (indent > 1) {
+              track[key] = value;
+            }
+          }
+          if (
+            Object.keys(track).length > 0 &&
+            tracks.find(
+              (alreadyPlayed) =>
+                track.performer == alreadyPlayed.performer &&
+                track.title == alreadyPlayed.title
+            ) == null
+          ) {
+            tracks.push(track);
+          }
+
+          let textarea = main.querySelector("textarea");
+          if (textarea == null) {
+            textarea = document.createElement("textarea");
+            main.appendChild(textarea);
+            main.querySelector("p").remove();
+          }
+          textarea.value = tracks.map((track) =>
+            track.performer != null
+              ? `${track.performer} — ${track.title}`
+              : `${track.title}`
+          )
+            .join("\n");
+          textarea.style.height = 0;
+          textarea.style.height = `calc(${textarea.scrollHeight}px - 2rem)`;
+        });
+      });
+    </script>
   </body>
 </html>
